@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LILEI2024</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(45deg, #1a1a1a, #2c3e50);
+            color: #ecf0f1;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #3498db;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+        #chatbox {
+            height: 300px;
+            border: 1px solid #3498db;
+            border-radius: 10px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        #userInput {
+            width: calc(100% - 70px);
+            padding: 10px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ecf0f1;
+        }
+        #sendButton {
+            width: 60px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #sendButton:hover {
+            background-color: #2980b9;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-message {
+            background-color: rgba(52, 152, 219, 0.3);
+            text-align: right;
+            margin-left: 20%;
+        }
+        .ai-message {
+            background-color: rgba(46, 204, 113, 0.3);
+            text-align: left;
+            margin-right: 20%;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-robot"></i> LILEI2024</h1>
+        <div id="chatbox"></div>
+        <input type="text" id="userInput" placeholder="输入消息...">
+        <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+    </div>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.className = isUser ? 'message user-message' : 'message ai-message';
+            if (!isUser) {
+                messageDiv.innerHTML = '<i class="fas fa-robot"></i> ' + message;
+            }
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function simulateAIResponse(message) {
+            const topics = {
+                "天气": {
+                    keywords: ["天气", "下雨", "晴天", "温度", "冷", "热"],
+                    responses: [
+                        "今天的天气确实{weather}，建议您{suggestion}。",
+                        "说到天气，最近{recent_weather}。您觉得这种天气适合做什么呢？",
+                        "天气对我们的日常生活影响很大。{weather_effect}您有什么应对的好办法吗？"
+                    ]
+                },
+                "工作": {
+                    keywords: ["工作", "职业", "事业", "老板", "同事", "项目"],
+                    responses: [
+                        "工作中遇到了{work_problem}吗？也许我们可以一起讨论解决方案。",
+                        "在职场中，{work_skill}是非常重要的。您是如何提升这方面能力的？",
+                        "平衡工作和生活确实很有挑战。您有什么好的方法来{work_life_balance}吗？"
+                    ]
+                },
+                "学习": {
+                    keywords: ["学习", "知识", "技能", "课程", "教育"],
+                    responses: [
+                        "学习{subject}确实很有挑战性。您有什么特别的学习方法吗？",
+                        "终身学习很重要。最近您在学习什么新东西？",
+                        "{learning_method}是一种很有效的学习方式。您觉得它适合您吗？"
+                    ]
+                },
+                "科技": {
+                    keywords: ["人工智能", "AI", "机器学习", "编程", "互联网", "科技"],
+                    responses: [
+                        "{tech_topic}是当前科技界的热门话题。您对它有什么看法？",
+                        "科技发展真的很快，{tech_impact}。您认为这会给我们的生活带来什么变化？",
+                        "说到{specific_tech}，它最近有了很大的进步。您了解这方面的最新发展吗？"
+                    ]
+                }
+            };
+
+            const fillers = {
+                weather: ["晴朗", "阴沉", "多变", "舒适"],
+                suggestion: ["多出门走走", "注意保暖", "记得防晒", "适当运动"],
+                recent_weather: ["变化很大", "一直很稳定", "有点反常"],
+                weather_effect: ["可能会影响心情。", "对健康有一定影响。", "可能会改变我们的日程安排。"],
+                work_problem: ["人际关系问题", "时间管理困难", "压力太大"],
+                work_skill: ["沟通能力", "领导力", "专业技能"],
+                work_life_balance: ["安排私人时间", "提高工作效率", "减轻压力"],
+                subject: ["新语言", "专业知识", "软技能"],
+                learning_method: ["在线课程", "读书", "实践学习"],
+                tech_topic: ["深度学习", "量子计算", "区块链"],
+                tech_impact: ["改变了我们的工作方式", "提高了生活质量", "带来了新的挑战"],
+                specific_tech: ["5G技术", "虚拟现实", "自动驾驶"]
+            };
+
+            function fillTemplate(template) {
+                return template.replace(/{(\w+)}/g, function(match, key) {
+                    return fillers[key] ? fillers[key][Math.floor(Math.random() * fillers[key].length)] : match;
+                });
+            }
+
+            for (let topic in topics) {
+                if (topics[topic].keywords.some(keyword => message.toLowerCase().includes(keyword))) {
+                    let response = topics[topic].responses[Math.floor(Math.random() * topics[topic].responses.length)];
+                    return fillTemplate(response);
+                }
+            }
+
+            const defaultResponses = [
+                "这是一个很有趣的话题。能告诉我更多您的想法吗？",
+                "您提到的这点很有意思。我们可以进一步探讨一下吗？",
+                "这个问题确实很复杂。您认为有哪些方面我们需要考虑？",
+                "您的观点很独特。能详细解释一下您是如何得出这个结论的吗？",
+                "这让我想到了一个相关的问题。您对{tech_topic}有什么看法？"
+            ];
+
+            return fillTemplate(defaultResponses[Math.floor(Math.random() * defaultResponses.length)]);
+        }
+
+        async function handleUserInput() {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                userInput.value = '';
+
+                // 显示加载指示器
+                const loadingMessage = document.createElement('div');
+                loadingMessage.innerHTML = '<div class="loading"></div> AI 正在思考...';
+                loadingMessage.className = 'message ai-message';
+                chatbox.appendChild(loadingMessage);
+
+                // 模拟 AI 思考时间
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // 移除加载指示器
+                chatbox.removeChild(loadingMessage);
+
+                const aiResponse = simulateAIResponse(message);
+                addMessage(aiResponse, false);
+            }
+        }
+
+        sendButton.addEventListener('click', handleUserInput);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleUserInput();
+            }
+        });
+    </script>
+</body>
+</html>
